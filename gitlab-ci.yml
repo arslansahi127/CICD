@@ -1,0 +1,45 @@
+variables:
+  IMAGE_ES_NAME: asms/es-demo
+  IMAGE_ES_TAG: elasticsearch:1.0.0
+  IMAGE_KB_NAME: asms/kb-demo
+  IMAGE_KB_TAG: kibana:1.0.0
+  DOCKER_HOST: tcp://docker:2375/
+  DOCKER_DRIVER: overlay2 
+  DOCKER_TLS_CERTDIR: ''
+stages:
+  - build-elasticsearch
+  - build-kibana
+  
+build-elasticsearch:
+  stage: build-elasticsearch
+  image: docker.elastic.co/elasticsearch/elasticsearch:7.16.2
+  services:
+    - name: docker:dind
+      alias: docker
+    # THIS IS IMPORTANT!
+      command: ["--tls=false"]
+  variables:
+    # THIS IS IMPORTANT!
+    DOCKER_TLS_CERTDIR: ''
+  before_script:    
+    - docker login -u $REGISTRY_USER -p $REGISTRY_PASS
+  script:
+    - docker build -t $IMAGE_ES_NAME:$IMAGE_ES_TAG .    
+    - docker push $IMAGE_ES_NAME:$IMAGE_ES_TAG
+build-kibana:
+  stage: build-kibana
+  image: docker.elastic.co/kibana/kibana:7.16.2
+  services:
+    - name: docker:dind
+      alias: docker
+    # THIS IS IMPORTANT!
+      command: ["--tls=false"]
+  variables:
+    # THIS IS IMPORTANT!!
+    DOCKER_TLS_CERTDIR: ''
+  before_script:    
+    - docker login -u $REGISTRY_USER -p $REGISTRY_PASS hub.docker.com
+  script:
+    - docker build -t $IMAGE_KB_NAME:$IMAGE_KB_TAG .    
+    - docker push $IMAGE_KB_NAME:$IMAGE_KB_TAG
+
